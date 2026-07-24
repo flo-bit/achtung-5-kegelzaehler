@@ -1,4 +1,4 @@
-const CACHE = 'achtung5-v1';
+const CACHE = 'achtung5-v2';
 const APP_SHELL = [
   './',
   './index.html',

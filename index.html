@@ -27,6 +27,10 @@
       --active:#1f4a3c;
       --active-ink:#fff;
       --special:#1f4a3c;
+      --team-a:#df4935;
+      --team-a-bg:#f9e5df;
+      --team-b:#2b765e;
+      --team-b-bg:#e1eee8;
       --shadow:0 20px 55px rgba(29,38,34,.1);
     }
     html[data-theme="dark"] {
@@ -42,6 +46,10 @@
       --active:#d7b950;
       --active-ink:#151a17;
       --special:#315e4f;
+      --team-a:#f05a44;
+      --team-a-bg:#38231f;
+      --team-b:#57aa89;
+      --team-b-bg:#1d332b;
       --shadow:0 22px 65px rgba(0,0,0,.3);
     }
     * { box-sizing:border-box; }
@@ -115,6 +123,7 @@
     .throw:hover { transform:translateY(-2px); filter:brightness(.97); }
     [data-theme="dark"] .throw:hover { filter:brightness(1.1); }
     .throw:active { transform:scale(.97); }
+    .throw:disabled { opacity:.35; cursor:not-allowed; transform:none; filter:none; }
     .throw.two { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); }
     .throw.five { color:#fff; background:var(--special); border-color:var(--special); }
     .throw small { position:absolute; left:3px; right:3px; bottom:7px; font-size:8px; line-height:1; font-weight:900; letter-spacing:.04em; text-transform:uppercase; opacity:.88; }
@@ -137,8 +146,17 @@
     .modal-body { padding:20px; overflow:auto; max-height:520px; }
     .history-list { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
     .history-empty { padding:28px 0; color:var(--muted); text-align:center; font-size:12px; }
-    .history-item { display:flex; align-items:center; gap:11px; padding:11px; border-radius:11px; background:var(--panel-2); }
-    .history-pin { width:36px; height:36px; flex:0 0 auto; display:grid; place-items:center; border-radius:9px; color:var(--ink); background:var(--panel); font-weight:900; }
+    .history-legend { display:flex; gap:15px; margin:0 0 13px; color:var(--muted); font-size:10px; font-weight:750; }
+    .history-legend span { display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .history-legend i { width:8px; height:8px; flex:0 0 auto; border-radius:50%; }
+    .history-legend .a i { background:var(--team-a); }
+    .history-legend .b i { background:var(--team-b); }
+    .history-item { display:flex; align-items:center; gap:11px; padding:11px; border:1px solid transparent; border-radius:11px; }
+    .history-item.team-0 { border-color:var(--team-a); background:var(--team-a-bg); }
+    .history-item.team-1 { border-color:var(--team-b); background:var(--team-b-bg); }
+    .history-pin { width:36px; height:36px; flex:0 0 auto; display:grid; place-items:center; border-radius:9px; color:#fff; font-weight:900; }
+    .team-0 .history-pin { background:var(--team-a); }
+    .team-1 .history-pin { background:var(--team-b); }
     .history-copy { min-width:0; flex:1; }
     .history-copy b { display:block; overflow:hidden; color:var(--ink); font-size:12px; white-space:nowrap; text-overflow:ellipsis; }
     .history-copy small { color:var(--muted); font-size:10px; }
@@ -148,6 +166,15 @@
     .qr-wrap { width:220px; height:220px; margin:auto; padding:10px; border-radius:13px; background:#fff; }
     .qr-wrap img { display:block; width:100%; height:100%; }
     .copy-link { width:220px; margin-top:14px; padding:11px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:var(--panel-2); cursor:pointer; font-size:11px; font-weight:850; }
+    .winner-body { padding:32px 24px 25px; text-align:center; }
+    .trophy { width:66px; height:66px; display:grid; place-items:center; margin:0 auto 17px; border-radius:50%; color:var(--active-ink); background:var(--active); }
+    .trophy svg { width:32px; }
+    .winner-body h2 { font-size:27px; }
+    .winner-body p { margin:8px 0 0; color:var(--muted); font-size:13px; }
+    .winner-actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:25px; }
+    .winner-actions button { padding:12px 10px; border-radius:10px; cursor:pointer; font-size:11px; font-weight:850; }
+    .winner-undo { border:1px solid var(--line); color:var(--ink); background:var(--panel-2); }
+    .new-game { border:1px solid var(--active); color:var(--active-ink); background:var(--active); }
     .toast {
       position:fixed; z-index:20; left:50%; bottom:max(20px,env(safe-area-inset-bottom)); transform:translate(-50%,15px);
       padding:10px 15px; border-radius:999px; color:var(--panel); background:var(--ink); box-shadow:0 10px 30px #0004;
@@ -217,7 +244,7 @@
       </div>
 
       <div class="throws">
-        <div class="throws-head"><h2>Gefallene Kegel</h2><span class="count">Würfe <b id="throwCount">0</b></span></div>
+        <div class="throws-head"><h2>Gefallene Kegel</h2><span class="count">Ziel <b>100</b> · Würfe <b id="throwCounts">0:0</b></span></div>
         <div class="grid">
           <button class="throw" data-pins="0" type="button">0</button>
           <button class="throw" data-pins="1" type="button">1</button>
@@ -243,7 +270,10 @@
 
   <dialog id="historyDialog">
     <div class="modal-head"><h2>Wurfverlauf</h2><button class="close" data-close="historyDialog" type="button" aria-label="Schließen">×</button></div>
-    <div class="modal-body"><ol class="history-list" id="historyList"></ol></div>
+    <div class="modal-body">
+      <div class="history-legend"><span class="a"><i></i><b id="legend0">Team Rot</b></span><span class="b"><i></i><b id="legend1">Team Grün</b></span></div>
+      <ol class="history-list" id="historyList"></ol>
+    </div>
   </dialog>
 
   <dialog id="qrDialog">
@@ -252,6 +282,15 @@
       <p>Scannen und den Zähler auf einem anderen Handy öffnen.</p>
       <div class="qr-wrap"><img id="qrCode" width="200" height="200" alt="QR-Code zu dieser Website" /></div>
       <button class="copy-link" id="copyLink" type="button">Link kopieren</button>
+    </div>
+  </dialog>
+
+  <dialog id="winnerDialog">
+    <div class="modal-body winner-body">
+      <span class="trophy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 21h8M9 17h6"/></svg></span>
+      <h2 id="winnerTitle">Gewonnen!</h2>
+      <p id="winnerScore"></p>
+      <div class="winner-actions"><button class="winner-undo" id="winnerUndo" type="button">Wurf korrigieren</button><button class="new-game" id="newGame" type="button">Neues Spiel</button></div>
     </div>
   </dialog>
 
@@ -276,17 +315,30 @@
       }
       function save() { try { localStorage.setItem('achtung5-state',JSON.stringify(state)); } catch (_) {} }
       function name(i) { return (state.names[i] || `Team ${i+1}`).trim() || `Team ${i+1}`; }
+      function throwCounts() {
+        return state.history.reduce((counts,entry)=>{ counts[entry.thrower]=(counts[entry.thrower]||0)+1; return counts; },[0,0]);
+      }
+      function getWinner() {
+        const counts=throwCounts();
+        if (counts[0]!==counts[1] || (state.scores[0]<100 && state.scores[1]<100) || state.scores[0]===state.scores[1]) return null;
+        return state.scores[0]>state.scores[1] ? 0 : 1;
+      }
       function render() {
+        const winner=getWinner();
+        const counts=throwCounts();
         names.forEach((el,i) => { if (document.activeElement !== el) el.value=state.names[i]; });
         scores.forEach((el,i) => el.textContent=state.scores[i]);
-        cards.forEach((el,i) => el.classList.toggle('active',state.active===i));
-        $('turnText').innerHTML=`<strong>${escapeHtml(name(state.active))}</strong> ist am Zug`;
-        $('throwCount').textContent=state.history.length;
+        cards.forEach((el,i) => el.classList.toggle('active',winner===null && state.active===i));
+        $('turnText').innerHTML=winner===null ? `<strong>${escapeHtml(name(state.active))}</strong> ist am Zug` : `<strong>${escapeHtml(name(winner))}</strong> gewinnt`;
+        $('throwCounts').textContent=`${counts[0]}:${counts[1]}`;
         $('undo').disabled=!state.history.length;
+        document.querySelectorAll('[data-pins]').forEach(button=>button.disabled=winner!==null);
+        $('switch').disabled=winner!==null;
         if ($('historyDialog').open) renderHistory();
       }
       function escapeHtml(text) { const el=document.createElement('span'); el.textContent=text; return el.innerHTML; }
       function renderHistory() {
+        $('legend0').textContent=name(0); $('legend1').textContent=name(1);
         if (!state.history.length) {
           $('historyList').innerHTML='<li class="history-empty">Noch keine Würfe.</li>';
           return;
@@ -295,10 +347,11 @@
           const thrower=escapeHtml(entry.throwerName || name(entry.thrower));
           const receiver=escapeHtml(entry.receiverName || name(entry.receiver));
           const detail=entry.pins===5 ? `${thrower} warf 5 · für ${receiver}` : `${thrower} warf ${entry.pins}`;
-          return `<li class="history-item"><span class="history-pin">${entry.pins}</span><span class="history-copy"><b>${receiver}</b><small>${detail}</small></span><span class="history-points">+${entry.points}</span></li>`;
+          return `<li class="history-item team-${entry.receiver}"><span class="history-pin">${entry.pins}</span><span class="history-copy"><b>${receiver}</b><small>${detail}</small></span><span class="history-points">+${entry.points}</span></li>`;
         }).join('');
       }
       function throwPins(pins) {
+        if (getWinner()!==null) return;
         const thrower=state.active;
         const receiver=pins===5 ? 1-thrower : thrower;
         const points=pins===2 ? 10 : pins;
@@ -306,17 +359,30 @@
         state.history.push({pins,points,thrower,receiver,throwerName:name(thrower),receiverName:name(receiver)});
         state.active=1-thrower;
         save(); render();
-        if (pins===2) toast(`+10 für ${name(receiver)}`);
-        if (pins===5) toast(`+5 für ${name(receiver)}`);
+        const winner=getWinner();
+        if (winner!==null) showWinner(winner);
+        else if (pins===2) toast(`+10 für ${name(receiver)}`);
+        else if (pins===5) toast(`+5 für ${name(receiver)}`);
       }
       function undo() {
         const last=state.history.pop();
         if (!last) return;
+        if ($('winnerDialog').open) $('winnerDialog').close();
         state.scores[last.receiver]=Math.max(0,state.scores[last.receiver]-last.points);
         state.active=last.thrower;
         save(); render(); toast('Wurf zurückgenommen');
       }
-      function setActive(i) { state.active=i; save(); render(); }
+      function setActive(i) { if (getWinner()===null) { state.active=i; save(); render(); } }
+      function showWinner(winner) {
+        $('winnerTitle').textContent=`${name(winner)} gewinnt!`;
+        $('winnerScore').textContent=`${state.scores[0]} : ${state.scores[1]} · beide Teams hatten gleich viele Würfe`;
+        if (!$('winnerDialog').open) $('winnerDialog').showModal();
+      }
+      function resetGame() {
+        state.scores=[0,0]; state.history=[]; state.active=0; save(); render();
+        if ($('winnerDialog').open) $('winnerDialog').close();
+        toast('Neues Spiel gestartet');
+      }
       function toast(text) {
         $('toast').textContent=text; $('toast').classList.add('show');
         clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('toast').classList.remove('show'),1800);
@@ -340,15 +406,16 @@
       $('switch').addEventListener('click',()=>setActive(1-state.active));
       $('undo').addEventListener('click',undo);
       $('reset').addEventListener('click',()=>{
-        if (!state.history.length || confirm('Punkte und Würfe zurücksetzen?')) {
-          state.scores=[0,0]; state.history=[]; state.active=0; save(); render(); toast('Zurückgesetzt');
-        }
+        if (!state.history.length || confirm('Punkte und Würfe zurücksetzen?')) resetGame();
       });
+      $('winnerUndo').addEventListener('click',undo);
+      $('newGame').addEventListener('click',resetGame);
+      $('winnerDialog').addEventListener('cancel',event=>event.preventDefault());
       $('historyButton').addEventListener('click',()=>{ renderHistory(); $('historyDialog').showModal(); });
       $('qrButton').addEventListener('click',()=>$('qrDialog').showModal());
       $('themeButton').addEventListener('click',()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'));
       document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>$(button.dataset.close).close()));
-      document.querySelectorAll('dialog').forEach(modal=>modal.addEventListener('click',e=>{ if(e.target===modal) modal.close(); }));
+      document.querySelectorAll('dialog').forEach(modal=>modal.addEventListener('click',e=>{ if(e.target===modal && modal.id!=='winnerDialog') modal.close(); }));
       $('copyLink').addEventListener('click',async()=>{
         try { await navigator.clipboard.writeText(location.href); }
         catch (_) { const input=document.createElement('input'); input.value=location.href; document.body.appendChild(input); input.select(); document.execCommand('copy'); input.remove(); }
@@ -367,6 +434,8 @@
       try { theme=localStorage.getItem('achtung5-theme'); } catch (_) {}
       setTheme(theme || (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
       render();
+      const savedWinner=getWinner();
+      if (savedWinner!==null) setTimeout(()=>showWinner(savedWinner));
     })();
   </script>
 </body>
